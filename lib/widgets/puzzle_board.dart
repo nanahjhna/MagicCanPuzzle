@@ -12,101 +12,169 @@ class PuzzleBoard extends StatefulWidget {
 }
 
 class _PuzzleBoardState extends State<PuzzleBoard> {
-  Color _parseColor(String colorName) {
+
+  // 1. 색상 문자열에 따라 캐릭터 이미지 경로를 반환하는 함수
+  String _getCharacterAsset(String colorName) {
     switch (colorName) {
-      case 'red': return Colors.red.shade500;
-      case 'orange': return Colors.orange.shade500;
-      case 'yellow': return Colors.amber.shade500;
-      case 'green': return Colors.green.shade500;
-      case 'blue': return Colors.blue.shade500;
-      case 'purple': return Colors.purple.shade400;
-      case 'window-bg': return const Color(0xFFFDE047);
-      default: return Colors.grey.shade300;
+      case 'red':
+        return 'assets/images/red_char.png';
+      case 'orange':
+        return 'assets/images/orange_char.png';
+      case 'yellow':
+        return 'assets/images/yellow_char.png';
+      case 'green':
+        return 'assets/images/green_char.png';
+      case 'blue':
+        return 'assets/images/blue_char.png';
+      case 'purple':
+        return 'assets/images/purple_char.png';
+      default:
+        return '';
+    }
+  }
+
+  // 입체적인 구슬 느낌을 위한 색상 변환 (RadialGradient용 베이스 컬러)
+  Color _parseBaseColor(String colorName) {
+    switch (colorName) {
+      case 'red':
+        return Colors.red.shade600;
+      case 'orange':
+        return Colors.orange.shade600;
+      case 'yellow':
+        return Colors.amber.shade500;
+      case 'green':
+        return Colors.green.shade600;
+      case 'blue':
+        return Colors.blue.shade600;
+      case 'purple':
+        return Colors.purple.shade500;
+      case 'window-bg':
+        return const Color(0xFFFDE047);
+      default:
+        return Colors.grey.shade400;
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFBCFE8),
-        borderRadius: BorderRadius.circular(30),
-        border: Border.all(color: const Color(0xFFDB2777), width: 6),
-      ),
-      child: Container(
-        padding: const EdgeInsets.all(10),
-        decoration: BoxDecoration(
-          color: const Color(0xFFFDE047),
-          borderRadius: BorderRadius.circular(15),
-          border: Border.all(color: const Color(0xFFCA8A04), width: 4),
-        ),
-        child: Column(
+    // 💡 화면 크기에 맞게 동적으로 크기를 조절하기 위해 LayoutBuilder로 감쌉니다.
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // 스마트폰 가로 폭에 맞춰 셀 크기를 자동 계산 (너무 커지지 않게 최대 55 제한)
+        double cellSize = constraints.maxWidth / 6.0;
+        if (cellSize > 55) cellSize = 55;
+
+        return Column(
           mainAxisSize: MainAxisSize.min,
-          children: List.generate(widget.puzzleState.board.length, (rIdx) {
-            var row = widget.puzzleState.board[rIdx];
-            int renderCount = (rIdx == 0) ? row.length : 3;
-            int vIdx = widget.puzzleState.viewIndices[rIdx];
-
-            return Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                rIdx == 0
-                    ? const SizedBox(width: 30, height: 45)
-                    : IconButton(
-                  icon: const Text('◀', style: TextStyle(fontWeight: FontWeight.bold)),
-                  onPressed: () {
-                    widget.puzzleState.rotateRow(rIdx, -1);
-                    widget.onUpdate();
-                  },
+          children: [
+            // 본체 캔 컨테이너
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                image: const DecorationImage(
+                  image: AssetImage('assets/images/cola_can_background.png'),
+                  fit: BoxFit.fill,
                 ),
-                Row(
-                  children: List.generate(renderCount, (i) {
-                    int actualIdx = (vIdx + i) % row.length;
-                    String colorStr = row[actualIdx];
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.4),
+                    blurRadius: 12,
+                    offset: const Offset(0, 6),
+                  ),
+                ],
+              ),
+              child: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.transparent,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: List.generate(widget.puzzleState.board.length, (rIdx) {
+                    var row = widget.puzzleState.board[rIdx];
+                    int renderCount = (rIdx == 0) ? row.length : 3;
+                    int vIdx = widget.puzzleState.viewIndices[rIdx];
 
-                    return GestureDetector(
-                      onTap: () {
-                        bool moved = widget.puzzleState.handleCellClick(rIdx, actualIdx);
-                        if (moved) {
-                          widget.onUpdate();
-                        }
-                      },
-                      child: Container(
-                        width: 45,
-                        height: 45,
-                        margin: const EdgeInsets.all(4),
-                        decoration: BoxDecoration(
-                          color: _parseColor(colorStr),
-                          shape: BoxShape.circle,
-                          boxShadow: colorStr == 'empty' || colorStr == 'window-bg'
-                              ? []
-                              : [const BoxShadow(color: Colors.black26, blurRadius: 4, offset: Offset(2, 2))],
-                        ),
-                        child: Center(
-                          child: Text(
-                            colorStr == 'empty' || colorStr == 'window-bg' ? '' : colorStr[0].toUpperCase(),
-                            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                    return Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        rIdx == 0
+                            ? SizedBox(width: cellSize * 0.8, height: cellSize)
+                            : IconButton(
+                          // 💡 fontSize를 추가하여 화살표 크기를 키웁니다.
+                          icon: Text(
+                            '◀',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF881337),
+                              fontSize: cellSize * 0.6, // 셀 크기에 비례해서 화살표 키우기 (또는 고정값 예: 24.0)
+                            ),
                           ),
+                          onPressed: () {
+                            widget.puzzleState.rotateRow(rIdx, -1);
+                            widget.onUpdate();
+                          },
                         ),
-                      ),
+                        Row(
+                          children: List.generate(renderCount, (i) {
+                            int actualIdx = (vIdx + i) % row.length;
+                            String colorStr = row[actualIdx];
+
+                            bool isEmpty = (colorStr == 'empty');
+                            bool isWindowBg = (colorStr == 'window-bg');
+
+                            return GestureDetector(
+                              onTap: () {
+                                bool moved = widget.puzzleState.handleCellClick(rIdx, actualIdx);
+                                if (moved) {
+                                  widget.onUpdate();
+                                }
+                              },
+                              child: Container(
+                                // 💡 고정값(55) 대신 계산된 반응형 크기(cellSize) 적용
+                                width: cellSize,
+                                height: cellSize,
+                                margin: const EdgeInsets.all(3),
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  image: isEmpty || isWindowBg
+                                      ? null
+                                      : DecorationImage(
+                                    image: AssetImage(_getCharacterAsset(colorStr)),
+                                    fit: BoxFit.cover,
+                                  ),
+                                  color: isEmpty ? Colors.white : Colors.transparent,
+                                ),
+                              ),
+                            );
+                          }),
+                        ),
+                        rIdx == 0
+                            ? SizedBox(width: cellSize * 0.8, height: cellSize)
+                            : IconButton(
+                          icon: Text(
+                            '▶',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF881337),
+                              fontSize: cellSize * 0.6, // 크기 조절
+                            ),
+                          ),
+                          onPressed: () {
+                            widget.puzzleState.rotateRow(rIdx, 1);
+                            widget.onUpdate();
+                          },
+                        ),
+                      ],
                     );
                   }),
                 ),
-                rIdx == 0
-                    ? const SizedBox(width: 30, height: 45)
-                    : IconButton(
-                  icon: const Text('▶', style: TextStyle(fontWeight: FontWeight.bold)),
-                  onPressed: () {
-                    widget.puzzleState.rotateRow(rIdx, 1);
-                    widget.onUpdate();
-                  },
-                ),
-              ],
-            );
-          }),
-        ),
-      ),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }
