@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:package_info_plus/package_info_plus.dart'; // 버전 정보를 위해 임포트
+import 'package:url_launcher/url_launcher.dart'; // 웹링크 연결을 위해 임포트flutter pub add url_launcher
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({Key? key}) : super(key: key);
@@ -11,6 +13,39 @@ class _SettingsScreenState extends State<SettingsScreen> {
   // 예시용 설정 상태값
   bool _isSoundOn = true;
   bool _isBgmOn = true;
+
+  // 버전 정보를 저장할 변수
+  String _appVersion = 'Unknown';
+
+  @override
+  void initState() {
+    super.initState();
+    _initPackageInfo();
+  }
+
+  // 앱 버전 및 빌드 번호 가져오기
+  Future<void> _initPackageInfo() async {
+    try {
+      final PackageInfo packageInfo = await PackageInfo.fromPlatform();
+      setState(() {
+        _appVersion = '${packageInfo.version}+${packageInfo.buildNumber}';
+      });
+    } catch (e) {
+      debugPrint('Failed to get package info: $e');
+    }
+  }
+
+  // 개인정보처리방침 URL 여는 함수
+  Future<void> _launchPrivacyPolicy() async {
+    final Uri url = Uri.parse('https://hdevpolic.netlify.app/');
+    try {
+      if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
+        throw Exception('Could not launch $url');
+      }
+    } catch (e) {
+      debugPrint('Could not launch URL: $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -100,11 +135,55 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 });
                               },
                             ),
+                            const Divider(color: Colors.white24, height: 24),
+
+                            // 개인정보처리방침 버튼 추가
+                            SizedBox(
+                              width: double.infinity,
+                              child: TextButton(
+                                onPressed: _launchPrivacyPolicy,
+                                style: TextButton.styleFrom(
+                                  padding: EdgeInsets.zero,
+                                  alignment: Alignment.centerLeft,
+                                ),
+                                child: const Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      '개인정보처리방침',
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                    Icon(
+                                      Icons.arrow_forward_ios,
+                                      color: Colors.white70,
+                                      size: 16,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
                           ],
                         ),
                       ),
 
                       const Spacer(),
+
+                      // 화면 최하단 버전 표시
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 24.0),
+                        child: Text(
+                          'ver : $_appVersion',
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.6),
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                 ),
