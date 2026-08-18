@@ -13,7 +13,7 @@ class PuzzleBoard extends StatefulWidget {
 
 class _PuzzleBoardState extends State<PuzzleBoard> {
 
-  // 1. 색상 문자열에 따라 캐릭터 이미지 경로를 반환하는 함수
+  // 색상 문자열에 따라 캐릭터 이미지 경로를 반환하는 함수
   String _getCharacterAsset(String colorName) {
     switch (colorName) {
       case 'red':
@@ -33,7 +33,7 @@ class _PuzzleBoardState extends State<PuzzleBoard> {
     }
   }
 
-  // 입체적인 구슬 느낌을 위한 색상 변환 (RadialGradient용 베이스 컬러)
+  // 입체적인 구슬 느낌을 위한 색상 변환
   Color _parseBaseColor(String colorName) {
     switch (colorName) {
       case 'red':
@@ -57,10 +57,8 @@ class _PuzzleBoardState extends State<PuzzleBoard> {
 
   @override
   Widget build(BuildContext context) {
-    // 💡 화면 크기에 맞게 동적으로 크기를 조절하기 위해 LayoutBuilder로 감쌉니다.
     return LayoutBuilder(
       builder: (context, constraints) {
-        // 스마트폰 가로 폭에 맞춰 셀 크기를 자동 계산 (너무 커지지 않게 최대 55 제한)
         double cellSize = constraints.maxWidth / 6.0;
         if (cellSize > 55) cellSize = 55;
 
@@ -93,80 +91,69 @@ class _PuzzleBoardState extends State<PuzzleBoard> {
                   mainAxisSize: MainAxisSize.min,
                   children: List.generate(widget.puzzleState.board.length, (rIdx) {
                     var row = widget.puzzleState.board[rIdx];
-                    int renderCount = (rIdx == 0) ? row.length : 3;
+
+                    // 💡 핵심 수정: 1행(rIdx == 0)도 아래 행들과 똑같이 3개만 보이도록 수정 (원하시면 숫자를 조절하세요)
+                    int renderCount = 3;
                     int vIdx = widget.puzzleState.viewIndices[rIdx];
 
-                    return Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        rIdx == 0
-                            ? SizedBox(width: cellSize * 0.8, height: cellSize)
-                            : IconButton(
-                          // 💡 fontSize를 추가하여 화살표 크기를 키웁니다.
-                          icon: Text(
-                            '◀',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF881337),
-                              fontSize: cellSize * 0.6, // 셀 크기에 비례해서 화살표 키우기 (또는 고정값 예: 24.0)
-                            ),
-                          ),
-                          onPressed: () {
+                    // 각 행(Row)을 GestureDetector로 감싸서 좌우 슬라이드로 회전
+                    return GestureDetector(
+                      onHorizontalDragEnd: (details) {
+                        // 1행도 슬라이드로 움직이게 하려면 rIdx != 0 조건을 빼거나 유지하세요.
+                        // 만약 1행도 움직이게 하고 싶다면 rIdx != 0 조건을 지우시면 됩니다.
+                        if (details.primaryVelocity != null) {
+                          if (details.primaryVelocity! > 0) {
                             widget.puzzleState.rotateRow(rIdx, -1);
                             widget.onUpdate();
-                          },
-                        ),
-                        Row(
-                          children: List.generate(renderCount, (i) {
-                            int actualIdx = (vIdx + i) % row.length;
-                            String colorStr = row[actualIdx];
-
-                            bool isEmpty = (colorStr == 'empty');
-                            bool isWindowBg = (colorStr == 'window-bg');
-
-                            return GestureDetector(
-                              onTap: () {
-                                bool moved = widget.puzzleState.handleCellClick(rIdx, actualIdx);
-                                if (moved) {
-                                  widget.onUpdate();
-                                }
-                              },
-                              child: Container(
-                                // 💡 고정값(55) 대신 계산된 반응형 크기(cellSize) 적용
-                                width: cellSize,
-                                height: cellSize,
-                                margin: const EdgeInsets.all(3),
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  image: isEmpty || isWindowBg
-                                      ? null
-                                      : DecorationImage(
-                                    image: AssetImage(_getCharacterAsset(colorStr)),
-                                    fit: BoxFit.cover,
-                                  ),
-                                  color: isEmpty ? Colors.white : Colors.transparent,
-                                ),
-                              ),
-                            );
-                          }),
-                        ),
-                        rIdx == 0
-                            ? SizedBox(width: cellSize * 0.8, height: cellSize)
-                            : IconButton(
-                          icon: Text(
-                            '▶',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF881337),
-                              fontSize: cellSize * 0.6, // 크기 조절
-                            ),
-                          ),
-                          onPressed: () {
+                          } else if (details.primaryVelocity! < 0) {
                             widget.puzzleState.rotateRow(rIdx, 1);
                             widget.onUpdate();
-                          },
+                          }
+                        }
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                        color: Colors.transparent,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: List.generate(renderCount, (i) {
+                                int actualIdx = (vIdx + i) % row.length;
+                                String colorStr = row[actualIdx];
+
+                                bool isEmpty = (colorStr == 'empty');
+                                bool isWindowBg = (colorStr == 'window-bg');
+
+                                return GestureDetector(
+                                  onTap: () {
+                                    bool moved = widget.puzzleState.handleCellClick(rIdx, actualIdx);
+                                    if (moved) {
+                                      widget.onUpdate();
+                                    }
+                                  },
+                                  child: Container(
+                                    width: cellSize,
+                                    height: cellSize,
+                                    margin: const EdgeInsets.all(3),
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      image: isEmpty || isWindowBg
+                                          ? null
+                                          : DecorationImage(
+                                        image: AssetImage(_getCharacterAsset(colorStr)),
+                                        fit: BoxFit.cover,
+                                      ),
+                                      color: isEmpty ? Colors.white : Colors.transparent,
+                                    ),
+                                  ),
+                                );
+                              }),
+                            ),
+                          ],
                         ),
-                      ],
+                      ),
                     );
                   }),
                 ),

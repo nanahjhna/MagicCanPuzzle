@@ -2,7 +2,7 @@ import 'dart:math';
 
 class PuzzleState {
   List<List<String>> board = [
-    ['window-bg', 'empty', 'window-bg'],
+    ['window-bg', 'empty', 'window-bg', 'window-bg', 'window-bg', 'window-bg'],
     ['red', 'orange', 'yellow', 'green', 'blue', 'purple'],
     ['orange', 'yellow', 'green', 'blue', 'purple', 'red'],
     ['yellow', 'green', 'blue', 'purple', 'red', 'orange'],
