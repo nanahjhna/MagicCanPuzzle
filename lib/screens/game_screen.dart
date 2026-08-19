@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart'; // 📌 1. 패키지 임포트
 import '../models/puzzle_state.dart';
 import '../widgets/puzzle_board.dart';
 
@@ -20,9 +21,15 @@ class _GameScreenState extends State<GameScreen> {
   bool _isCountdownActive = false;
   int _countdownValue = 3;
 
+  // ⚙️ 설정 상태 변수 (기본값 설정)
+  bool _isSoundOn = true;
+  bool _isBgmOn = true;
+
   @override
   void initState() {
     super.initState();
+    _loadSettings(); // 📌 2. 앱 실행 시 저장된 설정 불러오기
+
     // 화면에 진입하자마자 시작 팝업 띄우기
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _showStartPopup();
@@ -33,6 +40,22 @@ class _GameScreenState extends State<GameScreen> {
   void dispose() {
     _gameTimer?.cancel();
     super.dispose();
+  }
+
+  // 📌 3. SharedPreferences를 이용해 설정 불러오기
+  Future<void> _loadSettings() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _isSoundOn = prefs.getBool('isSoundOn') ?? true;
+      _isBgmOn = prefs.getBool('isBgmOn') ?? true;
+    });
+  }
+
+  // 📌 4. 설정 변경 시 SharedPreferences에 저장하기
+  Future<void> _saveSettings(bool soundOn, bool bgmOn) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('isSoundOn', soundOn);
+    await prefs.setBool('isBgmOn', bgmOn);
   }
 
   // 1️⃣ 게임 시작 전 안내 팝업 및 3초 카운트다운
@@ -94,6 +117,7 @@ class _GameScreenState extends State<GameScreen> {
         setState(() {
           _isCountdownActive = false;
           _secondsElapsed = 0;
+          _isPlaying = true; // 게임 플레이 중 상태 활성화
         });
         _startTimer(); // 게임 타이머 시작
       }
@@ -181,9 +205,134 @@ class _GameScreenState extends State<GameScreen> {
     );
   }
 
+  // ⚙️ 설정 팝업을 띄우는 함수
+  void _showSettingsDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              backgroundColor: const Color(0xFF283593),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              title: const Text(
+                '⚙️ 설정',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+              ),
+              content: Container(
+                padding: const EdgeInsets.all(15),
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.4),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: Colors.white.withOpacity(0.2)),
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // 1. 효과음 스위치
+                    _buildSettingSwitch(
+                      title: '효과음',
+                      value: _isSoundOn,
+                      onChanged: (value) {
+                        setDialogState(() {
+                          _isSoundOn = value;
+                        });
+                        setState(() {});
+                        _saveSettings(_isSoundOn, _isBgmOn); // 변경 즉시 저장
+                      },
+                    ),
+                    const Divider(color: Colors.white24, height: 24),
+
+                    // 2. BGM 스위치
+                    _buildSettingSwitch(
+                      title: 'BGM (배경음악)',
+                      value: _isBgmOn,
+                      onChanged: (value) {
+                        setDialogState(() {
+                          _isBgmOn = value;
+                        });
+                        setState(() {});
+                        _saveSettings(_isSoundOn, _isBgmOn); // 변경 즉시 저장
+                      },
+                    ),
+                    const Divider(color: Colors.white24, height: 24),
+
+                    // 3. 개인정보처리방침 버튼
+                    SizedBox(
+                      width: double.infinity,
+                      child: TextButton(
+                        onPressed: () {
+                          // TODO: 개인정보처리방침 링크 연결
+                        },
+                        style: TextButton.styleFrom(
+                          padding: EdgeInsets.zero,
+                          alignment: Alignment.centerLeft,
+                        ),
+                        child: const Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              '개인정보처리방침',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                            Icon(
+                              Icons.arrow_forward_ios,
+                              color: Colors.white70,
+                              size: 14,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              actionsAlignment: MainAxisAlignment.center,
+              actions: [
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.amber,
+                    foregroundColor: Colors.black,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                  onPressed: () {
+                    Navigator.pop(context);
+                  },
+                  child: const Text('닫기', style: TextStyle(fontWeight: FontWeight.bold)),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  // 스위치 항목을 만들어주는 헬퍼 메서드
+  Widget _buildSettingSwitch({required String title, required bool value, required ValueChanged<bool> onChanged}) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          title,
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+        ),
+        Switch(
+          value: value,
+          onChanged: onChanged,
+          activeColor: Colors.amber,
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    // mm:ss 형태로 타이머 포맷 변환 (예: 01:25)
     String formattedTime = '${(_secondsElapsed ~/ 60).toString().padLeft(2, '0')}:${(_secondsElapsed % 60).toString().padLeft(2, '0')}';
 
     return Scaffold(
@@ -195,18 +344,13 @@ class _GameScreenState extends State<GameScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 12.0),
               child: Column(
                 children: [
-                  // 1. 상단 정보 바 (타이머 및 설정 버튼)
+                  // 1. 상단 정보 바
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      // 타이머 표시 (기존 점수 위치에 타이머 반영)
                       Row(
                         children: [
-                          const Icon(
-                            Icons.timer,
-                            color: Color(0xFFFFD700),
-                            size: 28,
-                          ),
+                          const Icon(Icons.timer, color: Color(0xFFFFD700), size: 28),
                           const SizedBox(width: 6),
                           Text(
                             formattedTime,
@@ -219,22 +363,14 @@ class _GameScreenState extends State<GameScreen> {
                           ),
                         ],
                       ),
-                      // 우측 상단 설정 아이콘
                       IconButton(
-                        icon: const Icon(
-                          Icons.settings,
-                          color: Colors.white,
-                          size: 28,
-                        ),
-                        onPressed: () {
-                          // 설정 화면 이동
-                        },
+                        icon: const Icon(Icons.settings, color: Colors.white, size: 28),
+                        onPressed: () => _showSettingsDialog(context),
                       ),
                     ],
                   ),
                   const SizedBox(height: 10),
 
-                  // 2. 현재 게임 점수 또는 안내 문구
                   const Text(
                     'PUZZLE',
                     style: TextStyle(
@@ -268,9 +404,10 @@ class _GameScreenState extends State<GameScreen> {
                           child: Center(
                             child: PuzzleBoard(
                               puzzleState: _puzzleState,
+                              isSoundOn: _isSoundOn, // 📌 이 줄이 없으면 PuzzleBoard는 효과음이 켜져있는지 꺼져있는지 모릅니다!
                               onUpdate: () {
                                 setState(() {});
-                                _checkSuccess(); // 움직일 때마다 성공 여부 체크
+                                _checkSuccess();
                               },
                             ),
                           ),
@@ -298,7 +435,6 @@ class _GameScreenState extends State<GameScreen> {
                   ),
                   const SizedBox(height: 10),
 
-                  // 상태 표시 및 기능 버튼
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -327,7 +463,6 @@ class _GameScreenState extends State<GameScreen> {
               ),
             ),
 
-            // ⏱️ 3초 카운트다운 오버레이 화면 (화면 중앙에 큼직하게 표시)
             if (_isCountdownActive)
               Container(
                 color: Colors.black.withOpacity(0.7),
@@ -348,7 +483,6 @@ class _GameScreenState extends State<GameScreen> {
     );
   }
 
-  // 하단 대기 블록 UI 컴포넌트
   Widget _buildPreviewBlock({required Color color, required String shapeType}) {
     return Container(
       width: 75,

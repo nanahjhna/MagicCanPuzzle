@@ -1,17 +1,51 @@
 import 'package:flutter/material.dart';
+import 'package:audioplayers/audioplayers.dart';
 import '../models/puzzle_state.dart';
 
 class PuzzleBoard extends StatefulWidget {
   final PuzzleState puzzleState;
   final VoidCallback onUpdate;
+  final bool isSoundOn; // 1. 변수 선언
 
-  const PuzzleBoard({Key? key, required this.puzzleState, required this.onUpdate}) : super(key: key);
+  const PuzzleBoard({
+    Key? key,
+    required this.puzzleState,
+    required this.onUpdate,
+    required this.isSoundOn // 2. 생성자에 필수값으로 추가
+  }) : super(key: key);
 
   @override
   _PuzzleBoardState createState() => _PuzzleBoardState();
 }
 
 class _PuzzleBoardState extends State<PuzzleBoard> {
+  // 사운드 재생을 위한 AudioPlayer 인스턴스 생성
+  final AudioPlayer _audioPlayer = AudioPlayer();
+
+  @override
+  void dispose() {
+    _audioPlayer.dispose(); // 위젯 종료 시 자원 해제
+    super.dispose();
+  }
+
+  // puzzle_board.dart 내부
+  Future<void> _playTapSound() async {
+    if (!widget.isSoundOn) return; // 📌 효과음이 꺼져있으면 여기서 즉시 함수 종료 (가장 중요!)
+
+    try {
+      await _audioPlayer.stop();
+      await _audioPlayer.play(AssetSource('sounds/tap.mp3'));
+    } catch (e) { debugPrint("탭 사운드 재생 실패: $e"); }
+  }
+
+  Future<void> _playSlideSound() async {
+    if (!widget.isSoundOn) return; // 📌 효과음이 꺼져있으면 즉시 종료
+
+    try {
+      await _audioPlayer.stop();
+      await _audioPlayer.play(AssetSource('sounds/slide.mp3'));
+    } catch (e) { debugPrint("슬라이드 사운드 재생 실패: $e"); }
+  }
 
   // 색상 문자열에 따라 캐릭터 이미지 경로를 반환하는 함수
   String _getCharacterAsset(String colorName) {
@@ -65,7 +99,6 @@ class _PuzzleBoardState extends State<PuzzleBoard> {
         return Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // 본체 캔 컨테이너
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
@@ -91,17 +124,15 @@ class _PuzzleBoardState extends State<PuzzleBoard> {
                   mainAxisSize: MainAxisSize.min,
                   children: List.generate(widget.puzzleState.board.length, (rIdx) {
                     var row = widget.puzzleState.board[rIdx];
-
-                    // 💡 핵심 수정: 1행(rIdx == 0)도 아래 행들과 똑같이 3개만 보이도록 수정 (원하시면 숫자를 조절하세요)
                     int renderCount = 3;
                     int vIdx = widget.puzzleState.viewIndices[rIdx];
 
-                    // 각 행(Row)을 GestureDetector로 감싸서 좌우 슬라이드로 회전
                     return GestureDetector(
                       onHorizontalDragEnd: (details) {
-                        // 1행도 슬라이드로 움직이게 하려면 rIdx != 0 조건을 빼거나 유지하세요.
-                        // 만약 1행도 움직이게 하고 싶다면 rIdx != 0 조건을 지우시면 됩니다.
                         if (details.primaryVelocity != null) {
+                          // 💡 슬라이드 시 슬라이드 전용 사운드 재생
+                          _playSlideSound();
+
                           if (details.primaryVelocity! > 0) {
                             widget.puzzleState.rotateRow(rIdx, -1);
                             widget.onUpdate();
@@ -128,6 +159,9 @@ class _PuzzleBoardState extends State<PuzzleBoard> {
 
                                 return GestureDetector(
                                   onTap: () {
+                                    // 공/셀을 탭할 때 탭 효과음 재생
+                                    _playTapSound();
+
                                     bool moved = widget.puzzleState.handleCellClick(rIdx, actualIdx);
                                     if (moved) {
                                       widget.onUpdate();
