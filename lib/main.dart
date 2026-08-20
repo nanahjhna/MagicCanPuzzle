@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'screens/main_screen.dart';
 
-void main() {
+void main() async { // 📌 async를 추가해 주세요!
+  WidgetsFlutterBinding.ensureInitialized();
+  await MobileAds.instance.initialize();
   runApp(const MagicCanPuzzleApp());
 }
 

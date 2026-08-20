@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../widgets/ad_banner_widget.dart'; // 📌 광고 위젯 임포트 경로에 맞춰 수정해 주세요
 
 class TutorialScreen extends StatefulWidget {
   const TutorialScreen({Key? key}) : super(key: key);
@@ -88,7 +89,7 @@ class _TutorialScreenState extends State<TutorialScreen> {
               // 2. 튜토리얼 콘텐츠 영역 (이미지 슬라이더 + 텍스트)
               Expanded(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 16.0),
+                  padding: const EdgeInsets.symmetric(vertical: 8.0),
                   child: Column(
                     children: [
                       // 🖼️ 이미지 슬라이더 (PageView)
@@ -107,7 +108,7 @@ class _TutorialScreenState extends State<TutorialScreen> {
                         ),
                       ),
 
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 15),
 
                       // 🔵 페이지 인디케이터 (점 3개)
                       Row(
@@ -118,11 +119,18 @@ class _TutorialScreenState extends State<TutorialScreen> {
                         ),
                       ),
 
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 15),
                     ],
                   ),
                 ),
               ),
+
+              // 📌 3. 화면 하단 배너 광고 영역 추가
+              const SizedBox(
+                height: 50,
+                child: AdBannerWidget(),
+              ),
+              const SizedBox(height: 5),
             ],
           ),
         ),
@@ -166,17 +174,17 @@ class _TutorialScreenState extends State<TutorialScreen> {
                 // 로딩 중 표시
                 frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
                   if (wasSynchronouslyLoaded) return child;
-                  return frame != null ? child : const Center(child: CircularProgressIndicator(color: Colors.amberAccent,));
+                  return frame != null ? child : const Center(child: CircularProgressIndicator(color: Colors.amberAccent));
                 },
               ),
             ),
           ),
 
-          const SizedBox(height: 30),
+          const SizedBox(height: 20),
 
           // 📝 텍스트 설명 (반투명 배경)
           Container(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: Colors.black.withOpacity(0.3),
               borderRadius: BorderRadius.circular(16),
@@ -186,20 +194,20 @@ class _TutorialScreenState extends State<TutorialScreen> {
                 Text(
                   data['title']!,
                   style: const TextStyle(
-                    fontSize: 22,
+                    fontSize: 20,
                     fontWeight: FontWeight.bold,
                     color: Colors.amberAccent, // 제목 강조
                     letterSpacing: 0.5,
                   ),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 8),
                 Text(
                   data['text']!,
                   textAlign: TextAlign.center,
                   style: const TextStyle(
-                    fontSize: 16,
+                    fontSize: 15,
                     color: Colors.white,
-                    height: 1.6, // 줄간격 조정으로 가독성 향상
+                    height: 1.5, // 줄간격 조정으로 가독성 향상
                   ),
                 ),
               ],
@@ -215,11 +223,11 @@ class _TutorialScreenState extends State<TutorialScreen> {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 150),
       margin: const EdgeInsets.symmetric(horizontal: 6),
-      height: 10,
-      width: isActive ? 20 : 10, // 활성화된 점은 길게
+      height: 8,
+      width: isActive ? 20 : 8, // 활성화된 점은 길게
       decoration: BoxDecoration(
         color: isActive ? Colors.amberAccent : Colors.white.withOpacity(0.4),
-        borderRadius: BorderRadius.circular(5),
+        borderRadius: BorderRadius.circular(4),
       ),
     );
   }

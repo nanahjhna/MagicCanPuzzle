@@ -4,6 +4,7 @@ import 'package:package_info_plus/package_info_plus.dart'; // 패키지 임포�
 import 'game_screen.dart';
 import 'tutorial_screen.dart';
 import 'settings_screen.dart';
+import '../widgets/ad_banner_widget.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({Key? key}) : super(key: key);
@@ -121,7 +122,12 @@ class _MainScreenState extends State<MainScreen> {
                       MaterialPageRoute(builder: (_) => const SettingsScreen()),
                     ),
                   ),
-                  const SizedBox(height: 40),
+                  const SizedBox(height: 24),
+
+                  // 📌 설정 버튼 아래에 배너 광고 추가
+                  const AdBannerWidget(),
+
+                  const SizedBox(height: 16),
                 ],
               ),
             ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart'; // 버전 정보를 위해 임포트
-import 'package:url_launcher/url_launcher.dart'; // 웹링크 연결을 위해 임포트flutter pub add url_launcher
+import 'package:url_launcher/url_launcher.dart'; // 웹링크 연결을 위해 임포트
+import '../widgets/ad_banner_widget.dart'; // 📌 광고 위젯 임포트 경로에 맞춰 수정해 주세요
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({Key? key}) : super(key: key);
@@ -174,7 +175,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                       // 화면 최하단 버전 표시
                       Padding(
-                        padding: const EdgeInsets.only(bottom: 24.0),
+                        padding: const EdgeInsets.only(bottom: 12.0),
                         child: Text(
                           'ver : $_appVersion',
                           style: TextStyle(
@@ -189,6 +190,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
               ),
             ),
+
+            // 📌 3. 화면 하단 배너 광고 영역 추가
+            const SizedBox(
+              height: 50,
+              child: AdBannerWidget(),
+            ),
+            const SizedBox(height: 5),
           ],
         ),
       ),

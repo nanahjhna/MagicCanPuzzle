@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/puzzle_state.dart';
 import '../widgets/puzzle_board.dart';
+import '../widgets/ad_banner_widget.dart';
 
 class GameScreen extends StatefulWidget {
   const GameScreen({Key? key}) : super(key: key);
@@ -432,6 +433,7 @@ class _GameScreenState extends State<GameScreen> {
 
     String formattedTime = '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}.${centiseconds.toString().padLeft(2, '0')}';
 
+    // GameScreen의 build 메서드 내부 return 부분 수정
     return Scaffold(
       backgroundColor: const Color(0xFF3B4CCA),
       body: SafeArea(
@@ -477,10 +479,10 @@ class _GameScreenState extends State<GameScreen> {
                       letterSpacing: 2.0,
                     ),
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 10),
 
-                  // 3. 중앙 게임 보드 영역
-                  Expanded(
+                  // 3. 중앙 게임 보드 영역 (Flexible로 변경하여 공간 부족 시 줄어들게 처리)
+                  Flexible(
                     child: Center(
                       child: Container(
                         width: double.infinity,
@@ -512,25 +514,14 @@ class _GameScreenState extends State<GameScreen> {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 20),
-
-                  // 4. 하단 블록 선택 영역
-                  Container(
-                    height: 110,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF323FAD),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        _buildPreviewBlock(color: Colors.purpleAccent, shapeType: 'T'),
-                        _buildPreviewBlock(color: Colors.amber, shapeType: 'Square'),
-                        _buildTypeIPreviewBlock(),
-                      ],
-                    ),
-                  ),
                   const SizedBox(height: 10),
+
+                  // 📌 배너 광고가 잘리지 않도록 고정 크기 영역 확보
+                  const SizedBox(
+                    height: 50,
+                    child: AdBannerWidget(),
+                  ),
+                  const SizedBox(height: 5),
                 ],
               ),
             ),
