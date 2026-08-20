@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart'; // 📌 1. 패키지 임포트
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/puzzle_state.dart';
 import '../widgets/puzzle_board.dart';
 
@@ -14,9 +14,9 @@ class GameScreen extends StatefulWidget {
 class _GameScreenState extends State<GameScreen> {
   final PuzzleState _puzzleState = PuzzleState();
 
-  // ⏱️ 타이머 및 게임 상태 관련 변수
+  // ⏱️ 타이머 및 게임 상태 관련 변수 (밀리초 단위 측정을 위해 int 밀리초로 변경)
   Timer? _gameTimer;
-  int _secondsElapsed = 0;
+  int _millisecondsElapsed = 0;
   bool _isPlaying = false;
   bool _isCountdownActive = false;
   int _countdownValue = 3;
@@ -28,7 +28,7 @@ class _GameScreenState extends State<GameScreen> {
   @override
   void initState() {
     super.initState();
-    _loadSettings(); // 📌 2. 앱 실행 시 저장된 설정 불러오기
+    _loadSettings();
 
     // 화면에 진입하자마자 시작 팝업 띄우기
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -42,7 +42,7 @@ class _GameScreenState extends State<GameScreen> {
     super.dispose();
   }
 
-  // 📌 3. SharedPreferences를 이용해 설정 불러오기
+  // 📌 SharedPreferences를 이용해 설정 불러오기
   Future<void> _loadSettings() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
@@ -51,7 +51,7 @@ class _GameScreenState extends State<GameScreen> {
     });
   }
 
-  // 📌 4. 설정 변경 시 SharedPreferences에 저장하기
+  // 📌 설정 변경 시 SharedPreferences에 저장하기
   Future<void> _saveSettings(bool soundOn, bool bgmOn) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('isSoundOn', soundOn);
@@ -105,6 +105,8 @@ class _GameScreenState extends State<GameScreen> {
     setState(() {
       _isCountdownActive = true;
       _countdownValue = 3;
+      // 💡 타이머는 아직 시작하지 않고 일시정지 상태로 둡니다.
+      _isPlaying = false;
     });
 
     Timer.periodic(const Duration(seconds: 1), (timer) {
@@ -114,22 +116,24 @@ class _GameScreenState extends State<GameScreen> {
         });
       } else {
         timer.cancel();
+        // 📌 카운트다운이 완전히 끝난 바로 이 순간!
         setState(() {
           _isCountdownActive = false;
-          _secondsElapsed = 0;
-          _isPlaying = true; // 게임 플레이 중 상태 활성화
+          _isPlaying = true;
+          _millisecondsElapsed = 0; // 시간이 0부터 정확히 시작되도록 초기화
         });
-        _startTimer(); // 게임 타이머 시작
+        _startTimer(); // 🚀 타이머 시작!
       }
     });
   }
 
-  // 3️⃣ 실시간 타이머 시작
+  // 3️⃣ 정밀 타이머 시작 (10ms 단위로 갱신하여 밀리초 표시)
   void _startTimer() {
+    if (!_isPlaying) return;
     _gameTimer?.cancel();
-    _gameTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+    _gameTimer = Timer.periodic(const Duration(milliseconds: 10), (timer) {
       setState(() {
-        _secondsElapsed++;
+        _millisecondsElapsed += 10;
       });
     });
   }
@@ -143,11 +147,16 @@ class _GameScreenState extends State<GameScreen> {
     }
   }
 
-  // 5️⃣ 성공 팝업 (기록 표시)
+  // 5️⃣ 성공 팝업 (밀리초가 포함된 기록 표시)
   void _showSuccessPopup() {
-    int minutes = _secondsElapsed ~/ 60;
-    int seconds = _secondsElapsed % 60;
-    String timeStr = minutes > 0 ? '$minutes분 $seconds초' : '$seconds초';
+    int totalSeconds = _millisecondsElapsed ~/ 1000;
+    int minutes = totalSeconds ~/ 60;
+    int seconds = totalSeconds % 60;
+    int centiseconds = (_millisecondsElapsed % 1000) ~/ 10; // 1/100초 단위
+
+    String timeStr = minutes > 0
+        ? '$minutes분 $seconds.${centiseconds.toString().padLeft(2, '0')}초'
+        : '$seconds.${centiseconds.toString().padLeft(2, '0')}초';
 
     showDialog(
       context: context,
@@ -164,11 +173,6 @@ class _GameScreenState extends State<GameScreen> {
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text(
-                '퍼즐을 완성했습니다!',
-                style: TextStyle(color: Colors.white, fontSize: 16),
-              ),
-              const SizedBox(height: 15),
               Container(
                 padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 20),
                 decoration: BoxDecoration(
@@ -184,20 +188,48 @@ class _GameScreenState extends State<GameScreen> {
           ),
           actionsAlignment: MainAxisAlignment.center,
           actions: [
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.amber,
-                foregroundColor: Colors.black,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-              ),
-              onPressed: () {
-                Navigator.pop(context);
-                setState(() {
-                  _puzzleState.shuffle();
-                  _startCountdown(); // 다시 시작
-                });
-              },
-              child: const Text('다시 하기', style: TextStyle(fontWeight: FontWeight.bold)),
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.white,
+                      side: const BorderSide(color: Colors.white70),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                    onPressed: () {
+                      Navigator.pop(context); // 팝업 닫기
+                      Navigator.pop(context); // 홈으로 이동
+                    },
+                    icon: const Icon(Icons.home, color: Colors.white),
+                    label: const Text('홈으로', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.amber,
+                      foregroundColor: Colors.black,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                    onPressed: () {
+                      Navigator.pop(context);
+                      setState(() {
+                        _millisecondsElapsed = 0;
+                        _puzzleState.shuffle();
+                        _startCountdown();
+                      });
+                    },
+                    child: const Text('다시 하기', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  ),
+                ),
+              ],
             ),
           ],
         );
@@ -205,8 +237,13 @@ class _GameScreenState extends State<GameScreen> {
     );
   }
 
-  // ⚙️ 설정 팝업을 띄우는 함수
+  // ⚙️ 설정 팝업 (열릴 때 타이머 일시정지, 닫힐 때 타이머 재개)
   void _showSettingsDialog(BuildContext context) {
+    // 설정창이 열리는 순간 타이머 일시정지
+    if (_isPlaying) {
+      _gameTimer?.cancel();
+    }
+
     showDialog(
       context: context,
       builder: (context) {
@@ -230,7 +267,69 @@ class _GameScreenState extends State<GameScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    // 1. 효과음 스위치
+                    // 1. 홈으로 이동 항목
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Row(
+                          children: [
+                            Icon(Icons.home, color: Colors.white, size: 22),
+                            SizedBox(width: 10),
+                            Text(
+                              '메인으로 이동',
+                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+                            ),
+                          ],
+                        ),
+                        IconButton(
+                          onPressed: () {
+                            Navigator.pop(context); // 팝업 닫기
+                            Navigator.pop(context); // 홈으로 나가기
+                          },
+                          icon: const Icon(Icons.arrow_forward_ios, color: Colors.white70, size: 16),
+                          style: IconButton.styleFrom(
+                            backgroundColor: Colors.white12,
+                            padding: const EdgeInsets.all(8),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const Divider(color: Colors.white24, height: 20),
+
+                    // 2. 다시하기 항목
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Row(
+                          children: [
+                            Icon(Icons.refresh, color: Colors.amber, size: 22),
+                            SizedBox(width: 10),
+                            Text(
+                              '게임 다시하기',
+                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+                            ),
+                          ],
+                        ),
+                        IconButton(
+                          onPressed: () {
+                            Navigator.pop(context); // 팝업 닫기 후 아래 .then()에서 타이머가 재개되므로 수동 처리 필요
+                            setState(() {
+                              _millisecondsElapsed = 0;
+                              _puzzleState.shuffle();
+                              _startCountdown(); // 다시 시작
+                            });
+                          },
+                          icon: const Icon(Icons.play_arrow, color: Colors.black, size: 18),
+                          style: IconButton.styleFrom(
+                            backgroundColor: Colors.amber,
+                            padding: const EdgeInsets.all(8),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const Divider(color: Colors.white24, height: 30),
+
+                    // 3. 효과음 스위치
                     _buildSettingSwitch(
                       title: '효과음',
                       value: _isSoundOn,
@@ -239,12 +338,12 @@ class _GameScreenState extends State<GameScreen> {
                           _isSoundOn = value;
                         });
                         setState(() {});
-                        _saveSettings(_isSoundOn, _isBgmOn); // 변경 즉시 저장
+                        _saveSettings(_isSoundOn, _isBgmOn);
                       },
                     ),
                     const Divider(color: Colors.white24, height: 24),
 
-                    // 2. BGM 스위치
+                    // 4. BGM 스위치
                     _buildSettingSwitch(
                       title: 'BGM (배경음악)',
                       value: _isBgmOn,
@@ -253,18 +352,16 @@ class _GameScreenState extends State<GameScreen> {
                           _isBgmOn = value;
                         });
                         setState(() {});
-                        _saveSettings(_isSoundOn, _isBgmOn); // 변경 즉시 저장
+                        _saveSettings(_isSoundOn, _isBgmOn);
                       },
                     ),
                     const Divider(color: Colors.white24, height: 24),
 
-                    // 3. 개인정보처리방침 버튼
+                    // 5. 개인정보처리방침 버튼
                     SizedBox(
                       width: double.infinity,
                       child: TextButton(
-                        onPressed: () {
-                          // TODO: 개인정보처리방침 링크 연결
-                        },
+                        onPressed: () {},
                         style: TextButton.styleFrom(
                           padding: EdgeInsets.zero,
                           alignment: Alignment.centerLeft,
@@ -274,17 +371,9 @@ class _GameScreenState extends State<GameScreen> {
                           children: [
                             Text(
                               '개인정보처리방침',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
+                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
                             ),
-                            Icon(
-                              Icons.arrow_forward_ios,
-                              color: Colors.white70,
-                              size: 14,
-                            ),
+                            Icon(Icons.arrow_forward_ios, color: Colors.white70, size: 14),
                           ],
                         ),
                       ),
@@ -300,9 +389,7 @@ class _GameScreenState extends State<GameScreen> {
                     foregroundColor: Colors.black,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                   ),
-                  onPressed: () {
-                    Navigator.pop(context);
-                  },
+                  onPressed: () => Navigator.pop(context),
                   child: const Text('닫기', style: TextStyle(fontWeight: FontWeight.bold)),
                 ),
               ],
@@ -310,10 +397,14 @@ class _GameScreenState extends State<GameScreen> {
           },
         );
       },
-    );
+    ).then((_) {
+      // 📌 설정창이 완전히 닫힐 때 게임 중이었다면 타이머 재개
+      if (_isPlaying) {
+        _startTimer();
+      }
+    });
   }
 
-  // 스위치 항목을 만들어주는 헬퍼 메서드
   Widget _buildSettingSwitch({required String title, required bool value, required ValueChanged<bool> onChanged}) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -333,7 +424,13 @@ class _GameScreenState extends State<GameScreen> {
 
   @override
   Widget build(BuildContext context) {
-    String formattedTime = '${(_secondsElapsed ~/ 60).toString().padLeft(2, '0')}:${(_secondsElapsed % 60).toString().padLeft(2, '0')}';
+    // ⏱️ 시간 포맷팅: mm:ss.SS (분:초.밀리초 단위 표시)
+    int totalSeconds = _millisecondsElapsed ~/ 1000;
+    int minutes = totalSeconds ~/ 60;
+    int seconds = totalSeconds % 60;
+    int centiseconds = (_millisecondsElapsed % 1000) ~/ 10;
+
+    String formattedTime = '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}.${centiseconds.toString().padLeft(2, '0')}';
 
     return Scaffold(
       backgroundColor: const Color(0xFF3B4CCA),
@@ -355,10 +452,10 @@ class _GameScreenState extends State<GameScreen> {
                           Text(
                             formattedTime,
                             style: const TextStyle(
-                              fontSize: 22,
+                              fontSize: 20,
                               fontWeight: FontWeight.bold,
                               color: Colors.white,
-                              letterSpacing: 1.5,
+                              letterSpacing: 1.2,
                             ),
                           ),
                         ],
@@ -404,7 +501,7 @@ class _GameScreenState extends State<GameScreen> {
                           child: Center(
                             child: PuzzleBoard(
                               puzzleState: _puzzleState,
-                              isSoundOn: _isSoundOn, // 📌 이 줄이 없으면 PuzzleBoard는 효과음이 켜져있는지 꺼져있는지 모릅니다!
+                              isSoundOn: _isSoundOn,
                               onUpdate: () {
                                 setState(() {});
                                 _checkSuccess();
@@ -429,36 +526,11 @@ class _GameScreenState extends State<GameScreen> {
                       children: [
                         _buildPreviewBlock(color: Colors.purpleAccent, shapeType: 'T'),
                         _buildPreviewBlock(color: Colors.amber, shapeType: 'Square'),
-                        _buildPreviewBlock(color: Colors.cyan, shapeType: 'I'),
+                        _buildTypeIPreviewBlock(),
                       ],
                     ),
                   ),
                   const SizedBox(height: 10),
-
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        _puzzleState.isSuccess ? '🎉 성공!' : '슬라이드하여 움직여보세요!',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.bold,
-                          color: _puzzleState.isSuccess ? Colors.greenAccent : Colors.white70,
-                        ),
-                      ),
-                      const SizedBox(width: 20),
-                      TextButton.icon(
-                        onPressed: () {
-                          setState(() {
-                            _puzzleState.shuffle();
-                            _startCountdown();
-                          });
-                        },
-                        icon: const Icon(Icons.refresh, color: Colors.amber),
-                        label: const Text('새로고침', style: TextStyle(color: Colors.white)),
-                      ),
-                    ],
-                  ),
                 ],
               ),
             ),
@@ -498,6 +570,35 @@ class _GameScreenState extends State<GameScreen> {
           height: 35,
           decoration: BoxDecoration(
             color: color,
+            borderRadius: BorderRadius.circular(6),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.2),
+                blurRadius: 3,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTypeIPreviewBlock() {
+    return Container(
+      width: 75,
+      height: 75,
+      decoration: BoxDecoration(
+        color: const Color(0xFF263280),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.white.withOpacity(0.1)),
+      ),
+      child: Center(
+        child: Container(
+          width: 35,
+          height: 35,
+          decoration: BoxDecoration(
+            color: Colors.cyan,
             borderRadius: BorderRadius.circular(6),
             boxShadow: [
               BoxShadow(

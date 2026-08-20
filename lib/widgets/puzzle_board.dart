@@ -102,10 +102,6 @@ class _PuzzleBoardState extends State<PuzzleBoard> {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                image: const DecorationImage(
-                  image: AssetImage('assets/images/cola_can_background.png'),
-                  fit: BoxFit.fill,
-                ),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withOpacity(0.4),
@@ -128,16 +124,20 @@ class _PuzzleBoardState extends State<PuzzleBoard> {
                     int vIdx = widget.puzzleState.viewIndices[rIdx];
 
                     return GestureDetector(
+                      // 1. 가로 슬라이드 부분 수정
                       onHorizontalDragEnd: (details) {
                         if (details.primaryVelocity != null) {
-                          // 💡 슬라이드 시 슬라이드 전용 사운드 재생
-                          _playSlideSound();
+                          bool rotated = false;
 
                           if (details.primaryVelocity! > 0) {
-                            widget.puzzleState.rotateRow(rIdx, -1);
-                            widget.onUpdate();
+                            rotated = widget.puzzleState.rotateRow(rIdx, -1);
                           } else if (details.primaryVelocity! < 0) {
-                            widget.puzzleState.rotateRow(rIdx, 1);
+                            rotated = widget.puzzleState.rotateRow(rIdx, 1);
+                          }
+
+                          // 📌 실제로 회전이 성공했을 때만 슬라이드 소리 재생 및 업데이트
+                          if (rotated) {
+                            _playSlideSound();
                             widget.onUpdate();
                           }
                         }
@@ -158,12 +158,13 @@ class _PuzzleBoardState extends State<PuzzleBoard> {
                                 bool isWindowBg = (colorStr == 'window-bg');
 
                                 return GestureDetector(
+                                  // 2. 셀(공) 탭 부분 수정
                                   onTap: () {
-                                    // 공/셀을 탭할 때 탭 효과음 재생
-                                    _playTapSound();
-
                                     bool moved = widget.puzzleState.handleCellClick(rIdx, actualIdx);
+
+                                    // 📌 실제로 빈칸으로 이동했을 때만 탭 소리 재생 및 업데이트
                                     if (moved) {
+                                      _playTapSound();
                                       widget.onUpdate();
                                     }
                                   },

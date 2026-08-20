@@ -25,14 +25,16 @@ class PuzzleState {
     checkSuccess();
   }
 
-  void rotateRow(int rIdx, int direction) {
-    if (rIdx == 0) return;
+// 1. 행 회전 시 실제로 회전이 일어났는지 체크 (원한다면 조건 추가 가능, 보통은 호출되면 회전하므로 true 반환)
+  bool rotateRow(int rIdx, int direction) {
+    if (rIdx == 0) return false;
     int len = board[rIdx].length;
     viewIndices[rIdx] = (viewIndices[rIdx] + direction + len) % len;
     checkSuccess();
+    return true; // 실제로 회전 발생
   }
 
-  // 특정 위치를 클릭했을 때 빈칸과 인접해 있다면 이동
+  // 특정 위치를 클릭했을 때 빈칸과 인접해 있다면 이동 (실제 이동 성공 시 true 반환)
   bool handleCellClick(int clickedR, int clickedC) {
     // 1. 현재 빈칸(empty)의 실제 위치(r, c) 찾기
     int emptyR = -1;
@@ -99,6 +101,7 @@ class PuzzleState {
       }
     }
 
+    // 3. 인접해서 실제로 자리가 바뀌었을 때만 true 반환
     if (isAdjacent) {
       board[emptyR][emptyC] = board[clickedR][clickedC];
       board[clickedR][clickedC] = 'empty';
