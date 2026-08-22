@@ -26,12 +26,12 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.han.puzzle"
-        minSdk = flutter.minSdkVersion
-        targetSdk = flutter.targetSdkVersion
-        versionCode = flutter.versionCode
-        versionName = flutter.versionName
-    }
+    applicationId = "com.han.puzzle"
+    minSdk = flutter.minSdkVersion
+    targetSdk = 36
+    versionCode = flutter.versionCode
+    versionName = flutter.versionName
+}
 
     // Release 서명 설정
     signingConfigs {
