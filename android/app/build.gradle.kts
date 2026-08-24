@@ -3,7 +3,6 @@ import java.util.Properties
 
 plugins {
     id("com.android.application")
-    // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
 }
 
@@ -17,6 +16,8 @@ if (keystorePropertiesFile.exists()) {
 
 android {
     namespace = "com.han.puzzle"
+    
+    // compileSdk를 flutter 기본값과 동기화하거나 targetSdk와 일치시킵니다.
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -26,27 +27,32 @@ android {
     }
 
     defaultConfig {
-    applicationId = "com.han.puzzle"
-    minSdk = flutter.minSdkVersion
-    targetSdk = 36
-    versionCode = flutter.versionCode
-    versionName = flutter.versionName
-}
+        applicationId = "com.han.puzzle"
+        minSdk = flutter.minSdkVersion
+        // targetSdk를 임의로 고정하는 대신 플러터 기본값을 사용하거나 
+        // 꼭 필요하다면 compileSdk와 동일하게 맞추는 것이 안전합니다.
+        targetSdk = flutter.targetSdkVersion
+        versionCode = flutter.versionCode
+        versionName = flutter.versionName
+    }
 
-    // Release 서명 설정
+    // Release 서명 설정 (key.properties가 없을 경우 대비 안전장치 추가)
     signingConfigs {
         create("release") {
-            keyAlias = keystoreProperties["keyAlias"] as String
-            keyPassword = keystoreProperties["keyPassword"] as String
-            storeFile = file(keystoreProperties["storeFile"] as String)
-            storePassword = keystoreProperties["storePassword"] as String
+            val hasKeyProps = keystoreProperties.isNotEmpty()
+            keyAlias = if (hasKeyProps) keystoreProperties["keyAlias"] as String else ""
+            keyPassword = if (hasKeyProps) keystoreProperties["keyPassword"] as String else ""
+            storeFile = if (hasKeyProps && keystoreProperties["storeFile"] != null) file(keystoreProperties["storeFile"] as String) else null
+            storePassword = if (hasKeyProps) keystoreProperties["storePassword"] as String else ""
         }
     }
 
     buildTypes {
         release {
-            // 기존 debug 키가 아닌 upload-keystore.jks 사용
+            // 릴리스 빌드시에만 서명 적용 (디버그 모드 실행 시 충돌 방지)
             signingConfig = signingConfigs.getByName("release")
+            isMinifyEnabled = false
+            isShrinkResources = false
         }
     }
 }

@@ -1,17 +1,17 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <application
-        android:label="magiccanpuzzle"
+        android:label="MagicCanPuzzle"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         
         <!-- 📌 구글 애드몹 앱 ID 직접 추가 완료 -->
-        <meta-data
-            android:name="com.google.android.gms.ads.APPLICATION_ID"
-            android:value="ca-app-pub-3940256099942544~3347511713"/>
+        <!--        <meta-data-->
+        <!--             android:name="com.google.android.gms.ads.APPLICATION_ID"-->
+        <!--            android:value="ca-app-pub-3940256099942544~3347511713"/>-->
 
-<!--        <meta-data-->
-<!--            android:name="com.google.android.gms.ads.APPLICATION_ID"-->
-<!--            android:value="ca-app-pub-1474045642143501~6266144531"/>-->
+                <meta-data
+           android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="ca-app-pub-1474045642143501~6266144531"/>
 
         <activity
             android:name=".MainActivity"

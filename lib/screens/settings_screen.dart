@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart'; // 버전 정보를 위해 임포트
+import 'package:shared_preferences/shared_preferences.dart'; // 📌 설정 저장을 위해 임포트
 import 'package:url_launcher/url_launcher.dart'; // 웹링크 연결을 위해 임포트
 import '../widgets/ad_banner_widget.dart'; // 📌 광고 위젯 임포트 경로에 맞춰 수정해 주세요
 
@@ -11,7 +12,7 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  // 예시용 설정 상태값
+  // 설정 상태값
   bool _isSoundOn = true;
   bool _isBgmOn = true;
 
@@ -21,7 +22,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   void initState() {
     super.initState();
+    _loadSettings(); // 📌 화면 진입 시 저장된 설정 불러오기
     _initPackageInfo();
+  }
+
+  // 📌 SharedPreferences를 이용해 설정 불러오기
+  Future<void> _loadSettings() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _isSoundOn = prefs.getBool('isSoundOn') ?? true;
+      _isBgmOn = prefs.getBool('isBgmOn') ?? true;
+    });
+  }
+
+  // 📌 설정 변경 시 SharedPreferences에 저장하기
+  Future<void> _saveSettings(bool soundOn, bool bgmOn) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('isSoundOn', soundOn);
+    await prefs.setBool('isBgmOn', bgmOn);
   }
 
   // 앱 버전 및 빌드 번호 가져오기
@@ -124,6 +142,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 setState(() {
                                   _isSoundOn = value;
                                 });
+                                _saveSettings(_isSoundOn, _isBgmOn); // 📌 변경 즉시 저장
                               },
                             ),
                             const Divider(color: Colors.white24, height: 24),
@@ -134,6 +153,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 setState(() {
                                   _isBgmOn = value;
                                 });
+                                _saveSettings(_isSoundOn, _isBgmOn); // 📌 변경 즉시 저장
                               },
                             ),
                             const Divider(color: Colors.white24, height: 24),

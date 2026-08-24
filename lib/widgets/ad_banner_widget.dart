@@ -13,8 +13,8 @@ class _AdBannerWidgetState extends State<AdBannerWidget> {
   bool _isAdLoaded = false;
 
   // 💡 테스트용 광고 단위 ID (실제 출시 시 발급받은 배너 광고 ID로 교체하세요)
-  final String _adUnitId = 'ca-app-pub-3940256099942544/6331489573';
-  //final String _adUnitId = 'ca-app-pub-1474045642143501/6339356213';
+  //final String _adUnitId = 'ca-app-pub-3940256099942544/6331489573';
+  final String _adUnitId = 'ca-app-pub-1474045642143501/6339356213';
 
   @override
   void initState() {
