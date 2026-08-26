@@ -470,17 +470,6 @@ class _GameScreenState extends State<GameScreen> {
                   ),
                   const SizedBox(height: 10),
 
-                  const Text(
-                    'PUZZLE',
-                    style: TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.w900,
-                      color: Colors.white70,
-                      letterSpacing: 2.0,
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-
                   // 3. 중앙 게임 보드 영역 (Flexible로 변경하여 공간 부족 시 줄어들게 처리)
                   Flexible(
                     child: Center(

@@ -192,31 +192,31 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
 
                       const Spacer(),
-
-                      // 화면 최하단 버전 표시
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 12.0),
-                        child: Text(
-                          'ver : $_appVersion',
-                          style: TextStyle(
-                            color: Colors.white.withOpacity(0.6),
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ),
                     ],
                   ),
                 ),
               ),
             ),
 
-            // 📌 3. 화면 하단 배너 광고 영역 추가
+            // 📌 배너 광고 영역을 버전 정보 위로 이동
             const SizedBox(
               height: 50,
               child: AdBannerWidget(),
             ),
             const SizedBox(height: 5),
+
+            // 화면 최하단 버전 표시
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12.0),
+              child: Text(
+                'ver : $_appVersion',
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.6),
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
           ],
         ),
       ),
