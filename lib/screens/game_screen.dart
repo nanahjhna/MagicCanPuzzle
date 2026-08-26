@@ -13,6 +13,8 @@ class GameScreen extends StatefulWidget {
 }
 
 class _GameScreenState extends State<GameScreen> {
+  final GlobalKey<PuzzleBoardState> _boardKey = GlobalKey<PuzzleBoardState>();
+
   final PuzzleState _puzzleState = PuzzleState();
 
   // ⏱️ 타이머 및 게임 상태 관련 변수 (밀리초 단위 측정을 위해 int 밀리초로 변경)
@@ -80,19 +82,32 @@ class _GameScreenState extends State<GameScreen> {
               textAlign: TextAlign.center,
               style: TextStyle(color: Colors.white70, fontSize: 16),
             ),
+            // _showStartPopup 함수 안의 actions 부분 수정
+
             actionsAlignment: MainAxisAlignment.center,
             actions: [
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.amber,
-                  foregroundColor: Colors.black,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                ),
-                onPressed: () {
-                  Navigator.pop(context);
-                  _startCountdown();
+              // 📌 ElevatedButton 대신 GestureDetector를 사용하여 누르는 순간 반응하게 변경
+              GestureDetector(
+                onTapDown: (_) {
+                  // 🚀 손가락을 대는 순간 바로 실행되는 코드
+                  Navigator.pop(context); // 팝업 닫기
+                  _startCountdown();       // 카운트다운 및 시작 소리 재생
                 },
-                child: const Text('게임 시작', style: TextStyle(fontWeight: FontWeight.bold)),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: Colors.amber,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Text(
+                    '게임 시작',
+                    style: TextStyle(
+                      color: Colors.black,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
+                ),
               ),
             ],
           ),
@@ -109,6 +124,9 @@ class _GameScreenState extends State<GameScreen> {
       // 💡 타이머는 아직 시작하지 않고 일시정지 상태로 둡니다.
       _isPlaying = false;
     });
+
+    // 🚀 바로 이 순간! 카운트다운이 시작되자마자 시작 소리 재생
+    _boardKey.currentState?.playStartSound();
 
     Timer.periodic(const Duration(seconds: 1), (timer) {
       if (_countdownValue > 1) {
@@ -144,6 +162,10 @@ class _GameScreenState extends State<GameScreen> {
     if (_puzzleState.isSuccess && _isPlaying) {
       _gameTimer?.cancel();
       _isPlaying = false;
+
+      // 🎉 2. 퍼즐을 클리어했을 때 클리어 소리 재생!
+      _boardKey.currentState?.playClearSound();
+
       _showSuccessPopup();
     }
   }
@@ -491,6 +513,7 @@ class _GameScreenState extends State<GameScreen> {
                           padding: const EdgeInsets.all(8.0),
                           child: Center(
                             child: PuzzleBoard(
+                              key: _boardKey,
                               puzzleState: _puzzleState,
                               isSoundOn: _isSoundOn,
                               onUpdate: () {
