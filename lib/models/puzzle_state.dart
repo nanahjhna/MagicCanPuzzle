@@ -11,6 +11,16 @@ class PuzzleState {
   List<int> viewIndices = [0, 0, 0, 0];
   bool isSuccess = false;
 
+  // 🔄 화면의 열(visualCol: 0~2)을 실제 데이터 배열 인덱스(0~5)로 변환
+  int _toDataCol(int r, int visualCol) {
+    return (viewIndices[r] + visualCol) % board[r].length;
+  }
+
+  // 🔄 실제 데이터 배열 인덱스(0~5)를 화면의 열(visualCol: 0~2)로 변환
+  int _toVisualCol(int r, int actualCol) {
+    return (actualCol - viewIndices[r] + board[r].length) % board[r].length;
+  }
+
   void shuffle() {
     final random = Random();
     for (int r = 1; r < board.length; r++) {
@@ -25,86 +35,65 @@ class PuzzleState {
     checkSuccess();
   }
 
-// 1. 행 회전 시 실제로 회전이 일어났는지 체크 (원한다면 조건 추가 가능, 보통은 호출되면 회전하므로 true 반환)
+  // 행 회전 (버튼 눌렀을 때 실행)
   bool rotateRow(int rIdx, int direction) {
     if (rIdx == 0) return false;
     int len = board[rIdx].length;
     viewIndices[rIdx] = (viewIndices[rIdx] + direction + len) % len;
     checkSuccess();
-    return true; // 실제로 회전 발생
+    return true;
   }
 
-  // 특정 위치를 클릭했을 때 빈칸과 인접해 있다면 이동 (실제 이동 성공 시 true 반환)
-  bool handleCellClick(int clickedR, int clickedC) {
-    // 1. 현재 빈칸(empty)의 실제 위치(r, c) 찾기
-    int emptyR = -1;
-    int emptyC = -1;
+  // 화면상의 좌표(visualR, visualC)를 입력받아 클릭 처리
+  bool handleCellClick(int visualR, int visualC) {
+    // 1. 터치한 위치의 실제 데이터 배열 좌표
+    int dataR = visualR;
+    int dataC = (visualR == 0) ? visualC : _toDataCol(visualR, visualC);
+
+    // 이미 빈칸이거나 window-bg면 클릭 무시
+    if (board[dataR][dataC] == 'empty' || board[dataR][dataC] == 'window-bg') {
+      return false;
+    }
+
+    // 2. 현재 빈칸('empty')의 실제 데이터 위치 찾기
+    int emptyDataR = -1;
+    int emptyDataC = -1;
 
     for (int r = 0; r < board.length; r++) {
       for (int c = 0; c < board[r].length; c++) {
         if (board[r][c] == 'empty') {
-          emptyR = r;
-          emptyC = c;
+          emptyDataR = r;
+          emptyDataC = c;
           break;
         }
       }
-      if (emptyR != -1) break;
+      if (emptyDataR != -1) break;
     }
 
-    if (emptyR == -1) return false;
+    if (emptyDataR == -1) return false;
 
-    // 클릭한 곳이 이미 빈칸이거나 window-bg면 무시
-    if (board[clickedR][clickedC] == 'empty' || board[clickedR][clickedC] == 'window-bg') {
-      return false;
-    }
+    // 빈칸의 화면상 좌표 계산
+    int emptyVisualR = emptyDataR;
+    int emptyVisualC = (emptyDataR == 0) ? emptyDataC : _toVisualCol(emptyDataR, emptyDataC);
 
-    // 2. 인접 여부 확인 후 이동
+    // 3. 화면상에서 상하 또는 좌우로 1칸 인접해 있는지 확인
     bool isAdjacent = false;
 
-    if ((clickedR - emptyR).abs() == 1) {
-      if (clickedR == 0 || emptyR == 0) {
-        if (clickedR == 0) {
-          int v2Idx = viewIndices[1];
-          int targetColIn2 = (v2Idx + clickedC) % 6;
-          if (emptyR == 1 && emptyC == targetColIn2) {
-            isAdjacent = true;
-          }
-        } else {
-          int v2Idx = viewIndices[1];
-          int clickedViewColIn2 = (clickedC - v2Idx + 6) % 6;
-          if (emptyR == 0 && emptyC == clickedViewColIn2) {
-            isAdjacent = true;
-          }
-        }
-      } else {
-        int clickedViewCol = -1;
-        int c_vIdx = viewIndices[clickedR];
-        for (int k = 0; k < 3; k++) {
-          if ((c_vIdx + k) % board[clickedR].length == clickedC) {
-            clickedViewCol = k;
-            break;
-          }
-        }
-
-        int emptyViewCol = -1;
-        int e_vIdx = viewIndices[emptyR];
-        for (int k = 0; k < 3; k++) {
-          if ((e_vIdx + k) % board[emptyR].length == emptyC) {
-            emptyViewCol = k;
-            break;
-          }
-        }
-
-        if (clickedViewCol != -1 && emptyViewCol != -1 && clickedViewCol == emptyViewCol) {
-          isAdjacent = true;
-        }
-      }
+    // 같은 행이고 좌우로 1칸 인접
+    if (visualR == emptyVisualR && (visualC - emptyVisualC).abs() == 1) {
+      isAdjacent = true;
+    }
+    // 같은 열이고 상하로 1칸 인접
+    else if (visualC == emptyVisualC && (visualR - emptyVisualR).abs() == 1) {
+      isAdjacent = true;
     }
 
-    // 3. 인접해서 실제로 자리가 바뀌었을 때만 true 반환
+    // 4. 인접하다면 데이터 배열의 값 교환
     if (isAdjacent) {
-      board[emptyR][emptyC] = board[clickedR][clickedC];
-      board[clickedR][clickedC] = 'empty';
+      String temp = board[emptyDataR][emptyDataC];
+      board[emptyDataR][emptyDataC] = board[dataR][dataC];
+      board[dataR][dataC] = temp;
+
       checkSuccess();
       return true;
     }
@@ -117,7 +106,7 @@ class PuzzleState {
     for (int i = 0; i < 6; i++) {
       List<String> colColors = [];
       for (int r = 1; r < board.length; r++) {
-        int actualIdx = (viewIndices[r] + i) % board[r].length;
+        int actualIdx = _toDataCol(r, i);
         colColors.add(board[r][actualIdx]);
       }
       if (colColors.contains('empty') || !colColors.every((val) => val == colColors[0])) {
