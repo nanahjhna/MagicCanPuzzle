@@ -145,17 +145,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 _saveSettings(_isSoundOn, _isBgmOn); // 📌 변경 즉시 저장
                               },
                             ),
-                            const Divider(color: Colors.white24, height: 24),
-                            _buildSettingSwitch(
-                              title: 'BGM (배경음악)',
-                              value: _isBgmOn,
-                              onChanged: (value) {
-                                setState(() {
-                                  _isBgmOn = value;
-                                });
-                                _saveSettings(_isSoundOn, _isBgmOn); // 📌 변경 즉시 저장
-                              },
-                            ),
+                            // const Divider(color: Colors.white24, height: 24),
+                            // _buildSettingSwitch(
+                            //   title: 'BGM (배경음악)',
+                            //   value: _isBgmOn,
+                            //   onChanged: (value) {
+                            //     setState(() {
+                            //       _isBgmOn = value;
+                            //     });
+                            //     _saveSettings(_isSoundOn, _isBgmOn); // 📌 변경 즉시 저장
+                            //   },
+                            // ),
                             const Divider(color: Colors.white24, height: 24),
 
                             // 개인정보처리방침 버튼 추가

@@ -366,41 +366,41 @@ class _GameScreenState extends State<GameScreen> {
                     ),
                     const Divider(color: Colors.white24, height: 24),
 
-                    // 4. BGM 스위치
-                    _buildSettingSwitch(
-                      title: 'BGM (배경음악)',
-                      value: _isBgmOn,
-                      onChanged: (value) {
-                        setDialogState(() {
-                          _isBgmOn = value;
-                        });
-                        setState(() {});
-                        _saveSettings(_isSoundOn, _isBgmOn);
-                      },
-                    ),
-                    const Divider(color: Colors.white24, height: 24),
+                    // // 4. BGM 스위치
+                    // _buildSettingSwitch(
+                    //   title: 'BGM (배경음악)',
+                    //   value: _isBgmOn,
+                    //   onChanged: (value) {
+                    //     setDialogState(() {
+                    //       _isBgmOn = value;
+                    //     });
+                    //     setState(() {});
+                    //     _saveSettings(_isSoundOn, _isBgmOn);
+                    //   },
+                    // ),
+                    // const Divider(color: Colors.white24, height: 24),
 
-                    // 5. 개인정보처리방침 버튼
-                    SizedBox(
-                      width: double.infinity,
-                      child: TextButton(
-                        onPressed: () {},
-                        style: TextButton.styleFrom(
-                          padding: EdgeInsets.zero,
-                          alignment: Alignment.centerLeft,
-                        ),
-                        child: const Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              '개인정보처리방침',
-                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
-                            ),
-                            Icon(Icons.arrow_forward_ios, color: Colors.white70, size: 14),
-                          ],
-                        ),
-                      ),
-                    ),
+                    // // 5. 개인정보처리방침 버튼
+                    // SizedBox(
+                    //   width: double.infinity,
+                    //   child: TextButton(
+                    //     onPressed: () {},
+                    //     style: TextButton.styleFrom(
+                    //       padding: EdgeInsets.zero,
+                    //       alignment: Alignment.centerLeft,
+                    //     ),
+                    //     child: const Row(
+                    //       mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    //       children: [
+                    //         Text(
+                    //           '개인정보처리방침',
+                    //           style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+                    //         ),
+                    //         Icon(Icons.arrow_forward_ios, color: Colors.white70, size: 14),
+                    //       ],
+                    //     ),
+                    //   ),
+                    // ),
                   ],
                 ),
               ),
